@@ -2,8 +2,6 @@ import { requireAuth } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 import { Navbar } from "@/components/Navbar"
 import { DocumentCard } from "@/components/DocumentCard"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { PRODI_LIST } from "@/lib/prodi-context"
 
 export default async function DocumentsPage() {
   const session = await requireAuth()
@@ -15,6 +13,8 @@ export default async function DocumentsPage() {
     },
     orderBy: { createdAt: "desc" },
   })
+
+  type DocItem = (typeof documents)[number]
 
   return (
     <div className="min-h-screen bg-[#f8fafc]">
@@ -34,8 +34,8 @@ export default async function DocumentsPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {documents.map((doc) => (
-              <DocumentCard key={doc.id} document={doc as any} />
+            {documents.map((doc: DocItem) => (
+              <DocumentCard key={doc.id} document={doc} />
             ))}
           </div>
         )}

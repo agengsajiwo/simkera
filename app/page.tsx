@@ -22,19 +22,21 @@ export default async function HomePage() {
     }),
   ])
 
-  const totalMou = docs.filter((d) => d.type === "MOU").length
-  const totalMoa = docs.filter((d) => d.type === "MOA").length
-  const totalIa = docs.filter((d) => d.type === "IA").length
+  type DocRow = (typeof docs)[number]
+
+  const totalMou = docs.filter((d: DocRow) => d.type === "MOU").length
+  const totalMoa = docs.filter((d: DocRow) => d.type === "MOA").length
+  const totalIa = docs.filter((d: DocRow) => d.type === "IA").length
 
   const prodiStats = PRODI_LIST.map((prodi) => {
-    const pd = docs.filter((d) => d.prodiName === prodi)
+    const pd = docs.filter((d: DocRow) => d.prodiName === prodi)
     return {
       prodi,
-      mou: pd.filter((d) => d.type === "MOU").length,
-      moa: pd.filter((d) => d.type === "MOA").length,
-      ia: pd.filter((d) => d.type === "IA").length,
-      dudi: pd.filter((d) => d.partnerType === "DUDI").length,
-      univ: pd.filter((d) => d.partnerType === "UNIVERSITAS").length,
+      mou: pd.filter((d: DocRow) => d.type === "MOU").length,
+      moa: pd.filter((d: DocRow) => d.type === "MOA").length,
+      ia: pd.filter((d: DocRow) => d.type === "IA").length,
+      dudi: pd.filter((d: DocRow) => d.partnerType === "DUDI").length,
+      univ: pd.filter((d: DocRow) => d.partnerType === "UNIVERSITAS").length,
     }
   })
 

@@ -4,7 +4,6 @@ import { slugToProdi } from "@/lib/prodi-context"
 import { Navbar } from "@/components/Navbar"
 import { DocumentCard } from "@/components/DocumentCard"
 import { HierarchyTree } from "@/components/HierarchyTree"
-import { DocumentTypeBadge } from "@/components/DocumentTypeBadge"
 import { notFound } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -24,12 +23,19 @@ export default async function ProdiPage({ params }: { params: Promise<{ slug: st
     orderBy: { createdAt: "desc" },
   })
 
-  const mou = documents.filter((d) => d.type === "MOU")
-  const moa = documents.filter((d) => d.type === "MOA")
-  const ia = documents.filter((d) => d.type === "IA")
-  const pendingRecs = documents.reduce((acc, d) => acc + d.recommendations.filter((r) => r.status === "PENDING").length, 0)
+  type DocItem = (typeof documents)[number]
+  type RecItem = DocItem["recommendations"][number]
 
-  const treeDocuments = documents.map((d) => ({
+  const mou = documents.filter((d: DocItem) => d.type === "MOU")
+  const moa = documents.filter((d: DocItem) => d.type === "MOA")
+  const ia = documents.filter((d: DocItem) => d.type === "IA")
+  const pendingRecs = documents.reduce(
+    (acc: number, d: DocItem) =>
+      acc + d.recommendations.filter((r: RecItem) => r.status === "PENDING").length,
+    0
+  )
+
+  const treeDocuments = documents.map((d: DocItem) => ({
     id: d.id,
     type: d.type,
     title: d.title,
@@ -83,26 +89,26 @@ export default async function ProdiPage({ params }: { params: Promise<{ slug: st
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {documents.map((d) => <DocumentCard key={d.id} document={d as any} />)}
+                {documents.map((d: DocItem) => <DocumentCard key={d.id} document={d} />)}
               </div>
             )}
           </TabsContent>
 
           <TabsContent value="mou">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {mou.map((d) => <DocumentCard key={d.id} document={d as any} />)}
+              {mou.map((d: DocItem) => <DocumentCard key={d.id} document={d} />)}
             </div>
           </TabsContent>
 
           <TabsContent value="moa">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {moa.map((d) => <DocumentCard key={d.id} document={d as any} />)}
+              {moa.map((d: DocItem) => <DocumentCard key={d.id} document={d} />)}
             </div>
           </TabsContent>
 
           <TabsContent value="ia">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {ia.map((d) => <DocumentCard key={d.id} document={d as any} />)}
+              {ia.map((d: DocItem) => <DocumentCard key={d.id} document={d} />)}
             </div>
           </TabsContent>
 

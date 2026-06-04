@@ -1,6 +1,5 @@
 import { requireAuth } from "@/lib/auth"
 import { prisma } from "@/lib/db"
-import type { Recommendation } from "@prisma/client"
 import { Navbar } from "@/components/Navbar"
 import { DocumentTypeBadge } from "@/components/DocumentTypeBadge"
 import { StatusBadge } from "@/components/StatusBadge"
@@ -139,7 +138,7 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
             {/* Recommendations */}
             {doc.recommendations.length > 0 && (
               <RecommendationList
-                initialRecs={doc.recommendations.map((rec: Recommendation) => ({
+                initialRecs={doc.recommendations.map((rec: (typeof doc.recommendations)[number]) => ({
                   ...rec,
                   signedDate: rec.createdAt,
                   sourceDocument: { id: doc.id, title: doc.title, partnerName: doc.partnerName },

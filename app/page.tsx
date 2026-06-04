@@ -1,65 +1,82 @@
-import Image from "next/image";
+import { requireAuth } from "@/lib/auth"
+import { prisma } from "@/lib/db"
+import { Navbar } from "@/components/Navbar"
+import { ProdiCard } from "@/components/ProdiCard"
+import { ActivityFeed } from "@/components/ActivityFeed"
+import { StatsCard } from "@/components/StatsCard"
+import { PRODI_LIST } from "@/lib/prodi-context"
+import { FileText, BookOpen } from "lucide-react"
+import { Card, CardContent } from "@/components/ui/card"
 
-export default function Home() {
+export default async function HomePage() {
+  const session = await requireAuth()
+
+  const [docs, recentLogs] = await Promise.all([
+    prisma.document.findMany({
+      select: { id: true, type: true, prodiName: true, partnerType: true },
+    }),
+    prisma.activityLog.findMany({
+      take: 5,
+      orderBy: { createdAt: "desc" },
+      include: { user: { select: { name: true, email: true, image: true } } },
+    }),
+  ])
+
+  const totalMou = docs.filter((d) => d.type === "MOU").length
+  const totalMoa = docs.filter((d) => d.type === "MOA").length
+  const totalIa = docs.filter((d) => d.type === "IA").length
+
+  const prodiStats = PRODI_LIST.map((prodi) => {
+    const pd = docs.filter((d) => d.prodiName === prodi)
+    return {
+      prodi,
+      mou: pd.filter((d) => d.type === "MOU").length,
+      moa: pd.filter((d) => d.type === "MOA").length,
+      ia: pd.filter((d) => d.type === "IA").length,
+      dudi: pd.filter((d) => d.partnerType === "DUDI").length,
+      univ: pd.filter((d) => d.partnerType === "UNIVERSITAS").length,
+    }
+  })
+
+  const firstName = session.user?.name?.split(" ")[0] || "Pengguna"
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="min-h-screen bg-[#f8fafc]">
+      <Navbar session={session} />
+
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold text-gray-900">Selamat datang, {firstName}! 👋</h1>
+          <p className="text-gray-500 mt-1">Monitor dan kelola dokumen kerja sama program studi UNU Yogyakarta</p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <StatsCard title="Total MoU" value={totalMou} icon={FileText} color="text-blue-600" />
+          <StatsCard title="Total MoA" value={totalMoa} icon={FileText} color="text-purple-600" />
+          <StatsCard title="Total IA" value={totalIa} icon={FileText} color="text-orange-600" />
+          <StatsCard title="Total Dokumen" value={docs.length} icon={BookOpen} color="text-[#1e3a5f]" />
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2">
+            <h2 className="text-lg font-semibold text-gray-800 mb-4">Program Studi</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+              {prodiStats.map((ps) => (
+                <ProdiCard key={ps.prodi} prodi={ps.prodi} mou={ps.mou} moa={ps.moa} ia={ps.ia} dudi={ps.dudi} univ={ps.univ} />
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <h2 className="text-lg font-semibold text-gray-800 mb-4">Aktivitas Terkini</h2>
+            <Card>
+              <CardContent className="p-4">
+                <ActivityFeed logs={recentLogs as any} />
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </main>
     </div>
-  );
+  )
 }

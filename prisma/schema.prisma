@@ -1,0 +1,123 @@
+datasource db {
+  provider = "sqlite"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  role          String    @default("USER")
+  prodiAccess   String?
+  createdAt     DateTime  @default(now())
+  accounts      Account[]
+  sessions      Session[]
+  documents     Document[]   @relation("UploadedBy")
+  activityLogs  ActivityLog[]
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Document {
+  id               String   @id @default(cuid())
+  prodiName        String
+  type             String
+  title            String
+  partnerName      String
+  partnerType      String
+  sector           String
+  signedDate       DateTime
+  uploadedAt       DateTime @default(now())
+  fileUrl          String
+  fileName         String
+  status           String   @default("ACTIVE")
+  validityYears    Int      @default(2)
+  expiryDate       DateTime
+  mouId            String?
+  moaId            String?
+  extractedText    String
+  aiSummary        String
+  cooperationField String
+  notes            String?
+  uploadedById     String
+  uploadedBy       User     @relation("UploadedBy", fields: [uploadedById], references: [id])
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  parentMou   Document?  @relation("MouChildren", fields: [mouId], references: [id])
+  mouChildren Document[] @relation("MouChildren")
+  parentMoa   Document?  @relation("MoaChildren", fields: [moaId], references: [id])
+  moaChildren Document[] @relation("MoaChildren")
+
+  recommendations Recommendation[]
+}
+
+model Recommendation {
+  id                String   @id @default(cuid())
+  sourceDocumentId  String
+  sourceDocument    Document @relation(fields: [sourceDocumentId], references: [id])
+  prodiName         String
+  type              String
+  recommendedTitle  String
+  theme             String
+  topicSuggestions  String
+  impactAreas       String
+  impactLevel       String
+  rationale         String
+  draftScope        String
+  targetBeneficiary String
+  estimatedDuration String
+  exampleActivities String
+  priority          String
+  status            String   @default("PENDING")
+  aiGenerated       Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model ActivityLog {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  action      String
+  description String
+  metadata    String?
+  createdAt   DateTime @default(now())
+}

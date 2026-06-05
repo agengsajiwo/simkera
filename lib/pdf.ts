@@ -1,10 +1,19 @@
 import fs from "fs"
 import path from "path"
+import os from "os"
+
+function getUploadDir(): string {
+  // Vercel & serverless: hanya /tmp yang writable
+  // Local dev: ./public/uploads
+  if (process.env.VERCEL || process.env.NODE_ENV === "production") {
+    return path.join(os.tmpdir(), "simkera-uploads")
+  }
+  return process.env.UPLOAD_DIR || path.join(process.cwd(), "public", "uploads")
+}
 
 export async function extractTextFromPDF(filePath: string): Promise<string> {
   try {
     const dataBuffer = fs.readFileSync(filePath)
-    // Gunakan options render_page: false agar tidak butuh canvas/DOMMatrix
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const pdfParse = require("pdf-parse/lib/pdf-parse.js")
     const data = await pdfParse(dataBuffer, { max: 0 })
@@ -22,7 +31,8 @@ export async function savePDFFile(
   buffer: Buffer,
   originalName: string
 ): Promise<{ fileUrl: string; fileName: string; filePath: string }> {
-  const uploadDir = process.env.UPLOAD_DIR || "./public/uploads"
+  const uploadDir = getUploadDir()
+
   if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true })
   }
@@ -34,5 +44,10 @@ export async function savePDFFile(
 
   fs.writeFileSync(filePath, buffer)
 
-  return { fileUrl: `/uploads/${fileName}`, fileName, filePath }
+  // fileUrl hanya untuk referensi — di production file bersifat sementara
+  const fileUrl = process.env.VERCEL || process.env.NODE_ENV === "production"
+    ? `/tmp/${fileName}`
+    : `/uploads/${fileName}`
+
+  return { fileUrl, fileName, filePath }
 }
